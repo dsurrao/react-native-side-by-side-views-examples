@@ -1,19 +1,23 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import { SideBySide } from './SideBySide';
-import { SideBySideTest } from './SideBySideTest';
 
 export default class App extends React.Component {
   render() {
     return (
-      <SideBySideTest>
+      <SideBySide>
         <View>
           <Text>View One</Text>
+          <Image style={{height: 100}}
+            source={{uri: 'https://cdn.shopify.com/s/files/1/1368/0279/products/Emerge_America_300x.jpg?v=1504906105'}}/>
         </View>
         <View>
           <Text>View Two</Text>
+          <Image style={{height: 100}}
+            source={{uri: 'https://cdn.shopify.com/s/files/1/1368/0279/products/Women_Together_300x.jpg?v=1506351843'}}/>
+
         </View>
-      </SideBySideTest>
+      </SideBySide>
     );
   }
 }
