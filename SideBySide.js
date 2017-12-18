@@ -1,29 +1,22 @@
 import React from 'react';
-import { Dimensions, Image, PanResponder, StyleSheet, Text, View }
-  from 'react-native';
+import { Dimensions, Image, PanResponder, StyleSheet, Text, TouchableHighlight,
+  View } from 'react-native';
 
 export class SideBySide extends React.Component {
   _dividerHeight = 35;
   _dividerWidth = 35;
   _dividerOpacity = 0.5;
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      deviceWidth: 0,
-      leftViewWidth: 0,
-      rightViewWidth: 0,
-      dividerTop: 0,
-      dividerLeft: 0,
-      dividerLeftStart: 0,
-      children: {},
-      leftViewFlex: 1
-    };
-    this.renderChildren = this.renderChildren.bind(this)
-  }
+  _dividerTop = 0;
+  _dividerLeft = 0;
+  _dividerLeftStart = 0;
+  _leftViewWidth = 0;
+  _leftViewWidthStart = 0;
+  _rightViewWidth = 0;
+  _rightViewWidthStart = 0;
+  _lastTouchTimestamp = 0;
 
   componentWillMount() {
-    this.setViewControlDimensions();
+    this.resetViewControlDimensions();
 
     this._panResponder = PanResponder.create({
       // Ask to be the responder:
@@ -33,28 +26,35 @@ export class SideBySide extends React.Component {
       onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
 
       onPanResponderGrant: (evt, gestureState) => {
+        if (this._lastTouchTimestamp == 0) {
+          this._lastTouchTimestamp = evt.nativeEvent.timestamp;
+        }
+        else if ((evt.nativeEvent.timestamp - this._lastTouchTimestamp) < 500){
+          // this was a double tap if time between taps was less than 500ms
+          this.resetView();
+        }
+        this._lastTouchTimestamp = evt.nativeEvent.timestamp;
+
         // The gesture has started. Show visual feedback so the user knows
         // what is happening!
-
-        // gestureState.d{x,y} will be set to zero now
-        this.setState((prevState, props) => ({
-          dividerLeftStart: prevState.dividerLeft,
-          leftViewWidthStart: prevState.leftViewWidth,
-          rightViewWidthStart: prevState.rightViewWidth
-        }));
+        this._dividerLeftStart = this._dividerLeft;
+        this._leftViewWidthStart = this._leftViewWidth;
+        this._rightViewWidthStart = this._rightViewWidth;
       },
       onPanResponderMove: (evt, gestureState) => {
         // The most recent move distance is gestureState.move{X,Y}
 
         // The accumulated gesture distance since becoming responder is
         // gestureState.d{x,y}
-        this.setState((prevState, props) => ({
-          dividerLeft: prevState.dividerLeftStart + gestureState.dx,
-          leftViewFlex: (prevState.leftViewWidthStart + gestureState.dx)/
-            (prevState.rightViewWidthStart - gestureState.dx),
-          leftViewWidth: prevState.leftViewWidthStart + gestureState.dx,
-          rightViewWidth: prevState.rightViewWidthStart - gestureState.dx
-        }));
+        this._dividerLeft = this._dividerLeftStart + gestureState.dx;
+        this.divider.setNativeProps({left: this._dividerLeft});
+        this._leftViewWidth = this._leftViewWidthStart + gestureState.dx;
+        this._rightViewWidth = this._rightViewWidthStart - gestureState.dx;
+        this.leftView.setNativeProps({flex:
+            (this._leftViewWidthStart + gestureState.dx)/
+            (this._rightViewWidthStart - gestureState.dx)
+          }
+        );
       },
       onPanResponderTerminationRequest: (evt, gestureState) => true,
       onPanResponderRelease: (evt, gestureState) => {
@@ -81,27 +81,39 @@ export class SideBySide extends React.Component {
   }
 
   orientationChanged(evt) {
-    this.setViewControlDimensions();
+    this.resetView();
   }
 
-  setViewControlDimensions() {
+  resetView() {
+    this.resetViewControlDimensions();
+    this.divider.setNativeProps(
+      {left: this._dividerLeft, top: this._dividerTop});
+    this.leftView.setNativeProps({flex: 1});
+  }
+
+  resetViewControlDimensions() {
     let deviceHeight = Dimensions.get('window').height;
     let deviceWidth = Dimensions.get('window').width;
-    this.setState((prevState, props) => ({
-      leftViewWidth: deviceWidth/2,
-      rightViewWidth: deviceWidth/2,
-      leftViewFlex: 1,
-      dividerLeft: (deviceWidth/2) - (this._dividerWidth/2),
-      dividerTop: deviceHeight/2,
-    }));
+    this._leftViewWidth = deviceWidth/2;
+    this._rightViewWidth = deviceWidth/2;
+    this._dividerLeft = deviceWidth/2 - this._dividerWidth/2;
+    this._dividerTop = deviceHeight/2;
   }
 
   renderChildren() {
     this._children = React.Children.map(this.props.children,
      (child, index) => {
-       return React.cloneElement(child, {style:
-         {flex: (index == 0) ? this.state.leftViewFlex : 1,
-         padding: 1}});
+       if (index == 0) {
+        return React.cloneElement(child,
+          { style: {flex: 1, padding: 1},
+            ref: (thisView) => {this.leftView = thisView;}
+          }
+        );
+       }
+       else {
+         return React.cloneElement(child, {style:
+           {flex: 1, padding: 1}});
+       }
      });
     return this._children;
   }
@@ -110,10 +122,10 @@ export class SideBySide extends React.Component {
     return (
       <View style={ [styles.container, this.props.style] }>
         {this.renderChildren()}
-
-        <View style={[{position: 'absolute',
-            top: this.state.dividerTop,
-            left: this.state.dividerLeft,
+        <View ref={(divider) => {this.divider = divider;}}
+          style={[{position: 'absolute',
+            top: this._dividerTop,
+            left: this._dividerLeft,
             height: this._dividerHeight,
             width: this._dividerWidth,
             opacity: this._dividerOpacity},
@@ -128,7 +140,8 @@ export class SideBySide extends React.Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'row'
+    flexDirection: 'row',
+    alignItems: 'center'
   },
   divider: {
     backgroundColor: 'blue',
