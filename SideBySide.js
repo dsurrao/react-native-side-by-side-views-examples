@@ -108,16 +108,18 @@ export class SideBySide extends React.Component {
 
   render() {
     return (
-      <View style={styles.container}>
+      <View style={ [styles.container, this.props.style] }>
         {this.renderChildren()}
-        <Image style={{position: 'absolute',
+
+        <View style={[{position: 'absolute',
             top: this.state.dividerTop,
             left: this.state.dividerLeft,
             height: this._dividerHeight,
             width: this._dividerWidth,
-            opacity: this._dividerOpacity}}
-            source={require('./img/arrow-transfer.jpg')}
-            {...this._panResponder.panHandlers}/>
+            opacity: this._dividerOpacity},
+            styles.divider]}
+            {...this._panResponder.panHandlers}>
+        </View>
       </View>
     );
   }
@@ -126,10 +128,10 @@ export class SideBySide extends React.Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection:'row',
-    alignItems: 'stretch',
-    backgroundColor: 'powderblue',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    flexDirection: 'row'
+  },
+  divider: {
+    backgroundColor: 'blue',
+    borderRadius: 35
   }
 });
