@@ -1,11 +1,8 @@
-import React from 'react';
+import React, { Component } from 'react';
 import { Dimensions, Image, PanResponder, StyleSheet, Text, TouchableHighlight,
   View } from 'react-native';
 
-export class SideBySide extends React.Component {
-  _dividerHeight = 35;
-  _dividerWidth = 35;
-  _dividerOpacity = 0.5;
+export default class SideBySide extends Component {
   _dividerTop = 0;
   _dividerLeft = 0;
   _dividerLeftStart = 0;
@@ -94,10 +91,20 @@ export class SideBySide extends React.Component {
   resetViewControlDimensions() {
     let deviceHeight = Dimensions.get('window').height;
     let deviceWidth = Dimensions.get('window').width;
+    let dividerWidth = dividerWidthDefault;
+    let dividerHeight = dividerHeightDefault;
+    if ('dividerStyle' in this.props) {
+      if ('width' in this.props.dividerStyle) {
+        dividerWidth = this.props.dividerStyle.width;
+      }
+      if ('height' in this.props.dividerStyle) {
+        dividerHeight = this.props.dividerStyle.height;
+      }
+    }
     this._leftViewWidth = deviceWidth/2;
     this._rightViewWidth = deviceWidth/2;
-    this._dividerLeft = deviceWidth/2 - this._dividerWidth/2;
-    this._dividerTop = deviceHeight/2;
+    this._dividerLeft = deviceWidth/2 - dividerWidth/2;
+    this._dividerTop = deviceHeight/2 - dividerHeight/2;
   }
 
   renderChildren() {
@@ -119,24 +126,31 @@ export class SideBySide extends React.Component {
   }
 
   render() {
+    var customDividerStyle = {};
+    if ('dividerStyle' in this.props) {
+      customDividerStyle = [customDividerStyle, this.props.dividerStyle];
+    }
+
     return (
       <View style={ [styles.container, this.props.style] }>
         {this.renderChildren()}
         <View ref={(divider) => {this.divider = divider;}}
-          style={[{position: 'absolute',
-            top: this._dividerTop,
-            left: this._dividerLeft,
-            height: this._dividerHeight,
-            width: this._dividerWidth,
-            opacity: this._dividerOpacity},
-            styles.divider]}
-            {...this._panResponder.panHandlers}>
+          style= {
+            [{position: 'absolute',
+              top: this._dividerTop,
+              left: this._dividerLeft,},
+              [styles.divider],
+              [customDividerStyle]
+            ]}
+          {...this._panResponder.panHandlers}>
         </View>
       </View>
     );
   }
 }
 
+const dividerWidthDefault = 35;
+const dividerHeightDefault = 35;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -145,6 +159,11 @@ const styles = StyleSheet.create({
   },
   divider: {
     backgroundColor: 'blue',
-    borderRadius: 35
+    width: dividerWidthDefault,
+    height: dividerHeightDefault,
+    borderRadius: 35,
+    opacity: 0.5,
   }
 });
+
+export { SideBySide };
